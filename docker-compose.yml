@@ -1,0 +1,88 @@
+services:
+  magento:
+    image: bitnami/magento:2.4
+    ports:
+      - '80:8080'
+      - '443:8443'
+    environment:
+      - MAGENTO_HOST=${MAGENTO_HOST:-localhost}
+      - MAGENTO_DATABASE_HOST=mariadb
+      - MAGENTO_DATABASE_PORT_NUMBER=3306
+      - MAGENTO_DATABASE_NAME=${MAGENTO_DATABASE_NAME:-magento}
+      - MAGENTO_DATABASE_USER=${MAGENTO_DATABASE_USER:-magento}
+      - MAGENTO_DATABASE_PASSWORD=${MAGENTO_DATABASE_PASSWORD:-magento_password}
+      - MAGENTO_USERNAME=${MAGENTO_USERNAME:-admin}
+      - MAGENTO_PASSWORD=${MAGENTO_PASSWORD:-admin123}
+      - MAGENTO_EMAIL=${MAGENTO_EMAIL:-admin@example.com}
+      - MAGENTO_FIRST_NAME=${MAGENTO_FIRST_NAME:-Admin}
+      - MAGENTO_LAST_NAME=${MAGENTO_LAST_NAME:-User}
+      - MAGENTO_MODE=${MAGENTO_MODE:-developer}
+      - MAGENTO_SEARCH_ENGINE=opensearch
+      - MAGENTO_ELASTICSEARCH_HOST=opensearch
+      - MAGENTO_ELASTICSEARCH_PORT_NUMBER=9200
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT_NUMBER=9200
+      - MAGENTO_ENABLE_HTTPS=no
+      - MAGENTO_ENABLE_ADMIN_HTTPS=no
+      - MAGENTO_SKIP_BOOTSTRAP=${MAGENTO_SKIP_BOOTSTRAP:-no}
+      - REDIS_HOST=redis
+      - REDIS_PORT_NUMBER=6379
+    volumes:
+      - magento_data:/bitnami/magento
+    depends_on:
+      - mariadb
+      - opensearch
+      - redis
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:10.6
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - MYSQL_DATABASE=${MAGENTO_DATABASE_NAME:-magento}
+      - MYSQL_USER=${MAGENTO_DATABASE_USER:-magento}
+      - MYSQL_PASSWORD=${MAGENTO_DATABASE_PASSWORD:-magento_password}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    restart: unless-stopped
+    command: --max_allowed_packet=256M --innodb-buffer-pool-size=512M
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  magento_data:
+    driver: local
+  mariadb_data:
+    driver: local
+  opensearch_data:
+    driver: local
+  redis_data:
+    driver: local
