@@ -18,18 +18,21 @@ This repository contains a production-ready Docker Compose configuration for run
 
 ### For Easypanel Deployment
 
-📖 **Follow the comprehensive guide:** [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)
+📖 **Quick Setup:** [EASYPANEL_SETUP.md](EASYPANEL_SETUP.md) - Start here!
+📖 **Detailed Guide:** [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)
 
 **Quick Steps:**
-1. Push this repository to Git
-2. Create project in Easypanel from Git repository
-3. Add environment variables (see `.env.example`)
-4. **Important:** Add your Composer keys:
+1. Get Magento Composer keys from https://marketplace.magento.com/
+2. Push this repository to Git
+3. Create project in Easypanel from Git repository
+4. Add environment variables (see `.env.example`)
+5. **Critical:** Add your Composer authentication:
    - `COMPOSER_AUTH_PUBLIC=your_public_key`
    - `COMPOSER_AUTH_PRIVATE=your_private_key`
-5. Deploy (builds custom PHP images - takes 5-10 minutes)
-6. Access CLI container terminal and run: `bash /install-magento.sh`
-7. Wait 15-25 minutes for Magento installation
+6. Deploy (builds custom PHP images - takes 5-10 minutes)
+7. Configure domain in Easypanel's Domain/Network settings (not in docker-compose.yml)
+8. Access CLI container terminal and run: `bash /install-magento.sh`
+9. Wait 15-25 minutes for Magento installation
 
 ### For Local Development
 
@@ -106,9 +109,10 @@ See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for more commands.
 
 ## 📚 Documentation
 
-- **[EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)** - Complete Easypanel deployment guide
-- **[CLAUDE.md](CLAUDE.md)** - Development guidelines and architecture overview
+- **[EASYPANEL_SETUP.md](EASYPANEL_SETUP.md)** - ⚡ Quick Easypanel setup (start here!)
+- **[EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)** - Complete detailed guide
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Handy command reference
+- **[CLAUDE.md](CLAUDE.md)** - Development guidelines and architecture overview
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 
 ## 🔧 Project Structure
@@ -146,23 +150,28 @@ See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for more commands.
 
 ## 🐛 Troubleshooting
 
+### Port Already Allocated Error (Easypanel)
+✅ **Fixed!** The docker-compose.yml uses `expose` instead of `ports`.
+👉 Configure domain routing in **Easypanel's Domain settings**, not in docker-compose.yml
+
 ### Docker Build Fails
 - Ensure stable internet connection for downloading packages
 - Check Docker has sufficient disk space
 - Try: `docker compose build --no-cache`
 
 ### Installation Script Fails
-1. Check Composer keys are correct
+1. Check Composer keys are correct (no extra spaces!)
 2. Verify all containers are running: `docker compose ps`
 3. Check MariaDB is ready: `docker compose logs mariadb`
 4. Check OpenSearch is ready: `docker compose logs opensearch`
 
 ### Cannot Access Website
-1. Check nginx logs: `docker compose logs nginx`
-2. Check PHP logs: `docker compose logs php`
-3. Verify installation completed: `docker compose exec cli ls -la /var/www/html/app/etc/env.php`
+1. **Easypanel:** Verify domain is configured in Domain/Network settings
+2. Check nginx logs: `docker compose logs nginx`
+3. Check PHP logs: `docker compose logs php`
+4. Verify installation completed: `docker compose exec cli ls -la /var/www/html/app/etc/env.php`
 
-For more solutions, see [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md#troubleshooting)
+For more solutions, see [EASYPANEL_SETUP.md](EASYPANEL_SETUP.md#troubleshooting)
 
 ## 📦 System Requirements
 
