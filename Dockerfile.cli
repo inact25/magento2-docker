@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     cron \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions required by Magento
@@ -41,12 +42,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN echo "memory_limit = 4G" > /usr/local/etc/php/conf.d/magento.ini \
     && echo "max_execution_time = 18000" >> /usr/local/etc/php/conf.d/magento.ini
 
+# Create installation script inside the image
+COPY install-magento.sh /usr/local/bin/install-magento.sh
+RUN chmod +x /usr/local/bin/install-magento.sh
+
 # Set working directory
 WORKDIR /var/www/html
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html
+# Fix permissions - run as root for installation, switch to www-data later
+RUN chown -R www-data:www-data /var/www
 
-USER www-data
+# Stay as root user for installation
+USER root
 
 CMD ["bash"]

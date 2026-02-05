@@ -28,10 +28,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cli
+    user: root
     volumes:
       - magento_data:/var/www/html
-      - composer_cache:/var/www/.composer
-      - ./install-magento.sh:/install-magento.sh:ro
     environment:
       - PHP_MEMORY_LIMIT=4G
       - MAGENTO_VERSION=${MAGENTO_VERSION:-2.4.7}
@@ -106,6 +105,4 @@ volumes:
   opensearch_data:
     driver: local
   redis_data:
-    driver: local
-  composer_cache:
     driver: local
