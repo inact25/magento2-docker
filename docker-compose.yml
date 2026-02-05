@@ -1,34 +1,24 @@
 services:
-  magento:
-    image: bitnami/magento:2.4
+  nginx:
+    image: nginx:alpine
     ports:
-      - '80:8080'
-      - '443:8443'
-    environment:
-      - MAGENTO_HOST=${MAGENTO_HOST:-localhost}
-      - MAGENTO_DATABASE_HOST=mariadb
-      - MAGENTO_DATABASE_PORT_NUMBER=3306
-      - MAGENTO_DATABASE_NAME=${MAGENTO_DATABASE_NAME:-magento}
-      - MAGENTO_DATABASE_USER=${MAGENTO_DATABASE_USER:-magento}
-      - MAGENTO_DATABASE_PASSWORD=${MAGENTO_DATABASE_PASSWORD:-magento_password}
-      - MAGENTO_USERNAME=${MAGENTO_USERNAME:-admin}
-      - MAGENTO_PASSWORD=${MAGENTO_PASSWORD:-admin123}
-      - MAGENTO_EMAIL=${MAGENTO_EMAIL:-admin@example.com}
-      - MAGENTO_FIRST_NAME=${MAGENTO_FIRST_NAME:-Admin}
-      - MAGENTO_LAST_NAME=${MAGENTO_LAST_NAME:-User}
-      - MAGENTO_MODE=${MAGENTO_MODE:-developer}
-      - MAGENTO_SEARCH_ENGINE=opensearch
-      - MAGENTO_ELASTICSEARCH_HOST=opensearch
-      - MAGENTO_ELASTICSEARCH_PORT_NUMBER=9200
-      - OPENSEARCH_HOST=opensearch
-      - OPENSEARCH_PORT_NUMBER=9200
-      - MAGENTO_ENABLE_HTTPS=no
-      - MAGENTO_ENABLE_ADMIN_HTTPS=no
-      - MAGENTO_SKIP_BOOTSTRAP=${MAGENTO_SKIP_BOOTSTRAP:-no}
-      - REDIS_HOST=redis
-      - REDIS_PORT_NUMBER=6379
+      - "80:80"
+      - "443:443"
     volumes:
-      - magento_data:/bitnami/magento
+      - magento_data:/var/www/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+    restart: unless-stopped
+
+  php:
+    image: magento/magento-cloud-docker-php:8.2-fpm
+    volumes:
+      - magento_data:/var/www/html
+    environment:
+      - PHP_MEMORY_LIMIT=2G
+      - PHP_IDE_CONFIG=serverName=magento
+      - XDEBUG_CONFIG=remote_host=host.docker.internal
     depends_on:
       - mariadb
       - opensearch
@@ -39,13 +29,13 @@ services:
     image: mariadb:10.6
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
-      - MYSQL_DATABASE=${MAGENTO_DATABASE_NAME:-magento}
-      - MYSQL_USER=${MAGENTO_DATABASE_USER:-magento}
-      - MYSQL_PASSWORD=${MAGENTO_DATABASE_PASSWORD:-magento_password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-magento}
+      - MYSQL_USER=${MYSQL_USER:-magento}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-magento_password}
     volumes:
       - mariadb_data:/var/lib/mysql
-    restart: unless-stopped
     command: --max_allowed_packet=256M --innodb-buffer-pool-size=512M
+    restart: unless-stopped
 
   opensearch:
     image: opensearchproject/opensearch:2.11.1
@@ -77,6 +67,21 @@ services:
       timeout: 5s
       retries: 5
 
+  cli:
+    image: magento/magento-cloud-docker-php:8.2-cli
+    volumes:
+      - magento_data:/var/www/html
+      - composer_cache:/root/.composer
+    environment:
+      - PHP_MEMORY_LIMIT=2G
+    depends_on:
+      - mariadb
+      - opensearch
+      - redis
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+
 volumes:
   magento_data:
     driver: local
@@ -85,4 +90,6 @@ volumes:
   opensearch_data:
     driver: local
   redis_data:
+    driver: local
+  composer_cache:
     driver: local
