@@ -12,18 +12,50 @@ services:
     restart: unless-stopped
 
   php:
-    image: magento/magento-cloud-docker-php:8.2-fpm
+    build:
+      context: .
+      dockerfile: Dockerfile.php
     volumes:
       - magento_data:/var/www/html
     environment:
       - PHP_MEMORY_LIMIT=2G
-      - PHP_IDE_CONFIG=serverName=magento
-      - XDEBUG_CONFIG=remote_host=host.docker.internal
     depends_on:
       - mariadb
       - opensearch
       - redis
     restart: unless-stopped
+
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile.cli
+    volumes:
+      - magento_data:/var/www/html
+      - composer_cache:/var/www/.composer
+      - ./install-magento.sh:/install-magento.sh:ro
+    environment:
+      - PHP_MEMORY_LIMIT=4G
+      - MAGENTO_VERSION=${MAGENTO_VERSION:-2.4.7}
+      - BASE_URL=${BASE_URL:-http://localhost}
+      - ADMIN_FIRSTNAME=${ADMIN_FIRSTNAME:-Admin}
+      - ADMIN_LASTNAME=${ADMIN_LASTNAME:-User}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin@123}
+      - MYSQL_HOST=${MYSQL_HOST:-mariadb}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-magento}
+      - MYSQL_USER=${MYSQL_USER:-magento}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - COMPOSER_AUTH_PUBLIC=${COMPOSER_AUTH_PUBLIC}
+      - COMPOSER_AUTH_PRIVATE=${COMPOSER_AUTH_PRIVATE}
+    depends_on:
+      - mariadb
+      - opensearch
+      - redis
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    command: sleep infinity
 
   mariadb:
     image: mariadb:10.6
@@ -66,21 +98,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  cli:
-    image: magento/magento-cloud-docker-php:8.2-cli
-    volumes:
-      - magento_data:/var/www/html
-      - composer_cache:/root/.composer
-    environment:
-      - PHP_MEMORY_LIMIT=2G
-    depends_on:
-      - mariadb
-      - opensearch
-      - redis
-    tty: true
-    stdin_open: true
-    restart: unless-stopped
 
 volumes:
   magento_data:

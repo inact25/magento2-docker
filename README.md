@@ -1,66 +1,202 @@
 # Magento 2 Docker Compose for Easypanel
 
-This repository contains a Docker Compose configuration for running Magento 2 on Easypanel.
+This repository contains a production-ready Docker Compose configuration for running Magento 2 on Easypanel using custom-built PHP containers with all required extensions.
 
-## Quick Start
+## ⚡ Quick Start
+
+### Prerequisites
+
+1. **Magento Marketplace Account** - Get free Composer authentication keys:
+   - Go to https://marketplace.magento.com/
+   - Navigate to **My Profile** → **Access Keys**
+   - Create a new access key (Public Key = username, Private Key = password)
+
+2. **System Requirements:**
+   - Docker and Docker Compose v2+
+   - Minimum 4GB RAM
+   - 25GB free disk space
 
 ### For Easypanel Deployment
 
-Follow the comprehensive guide in [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)
+📖 **Follow the comprehensive guide:** [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)
+
+**Quick Steps:**
+1. Push this repository to Git
+2. Create project in Easypanel from Git repository
+3. Add environment variables (see `.env.example`)
+4. **Important:** Add your Composer keys:
+   - `COMPOSER_AUTH_PUBLIC=your_public_key`
+   - `COMPOSER_AUTH_PRIVATE=your_private_key`
+5. Deploy (builds custom PHP images - takes 5-10 minutes)
+6. Access CLI container terminal and run: `bash /install-magento.sh`
+7. Wait 15-25 minutes for Magento installation
 
 ### For Local Development
 
-1. Copy the environment file:
+1. **Copy the environment file:**
    ```bash
    cp .env.example .env
    ```
 
-2. Edit `.env` with your configuration
-
-3. Start the containers:
-   ```bash
-   docker-compose up -d
+2. **Edit `.env` and add your Magento Composer keys:**
+   ```env
+   COMPOSER_AUTH_PUBLIC=your_public_key
+   COMPOSER_AUTH_PRIVATE=your_private_key
    ```
 
-4. Wait for installation to complete (5-10 minutes)
+3. **Start the containers:**
+   ```bash
+   docker compose up -d --build
+   ```
+   *First build takes 5-10 minutes to build PHP images*
 
-5. Access Magento:
+4. **Run the installation script:**
+   ```bash
+   docker compose exec cli bash /install-magento.sh
+   ```
+
+5. **Wait 15-25 minutes** for installation to complete
+
+6. **Access Magento:**
    - Frontend: http://localhost
    - Admin: http://localhost/admin
+   - Username: admin
+   - Password: Admin@123 (change in .env)
 
-## What's Included
+## 🏗️ What's Included
 
-- **Magento 2.4** with PHP-FPM and Nginx
-- **MariaDB 10.6** for database
-- **OpenSearch 7.17** for search (required for Magento 2.4+)
-- **Redis 7** for caching and sessions
+- **Nginx** - High-performance web server (Alpine Linux)
+- **PHP 8.2 FPM** - Custom-built with all Magento required extensions
+- **PHP 8.2 CLI** - Separate container for running Magento commands
+- **MariaDB 10.6** - Optimized database server
+- **OpenSearch 2.11** - Search engine (Magento 2.4+ requirement)
+- **Redis 7** - Cache and session storage
 
-## System Requirements
+### PHP Extensions Included
+- PDO MySQL, MySQLi
+- GD (with FreeType, JPEG, WebP)
+- Intl, SOAP, XSL
+- ZIP, BCMath, Sockets
+- Sodium, OPcache
 
-- Docker and Docker Compose
-- Minimum 4GB RAM
-- 20GB free disk space
+## 📋 Common Commands
 
-## Documentation
+All Magento commands should be run in the **cli** container:
 
-- [Easypanel Installation Guide](EASYPANEL_INSTALLATION_GUIDE.md) - Complete guide for Easypanel deployment
-- [CLAUDE.md](CLAUDE.md) - Development guidelines and Magento CLI commands
+```bash
+# Access CLI container
+docker compose exec cli bash
 
-## Default Credentials
+# Clear cache
+php bin/magento cache:flush
 
-**Admin Panel:**
-- URL: http://localhost/admin
-- Username: admin
-- Password: admin123
+# Reindex
+php bin/magento indexer:reindex
 
-> **Important:** Change these credentials in production!
+# Deploy static content
+php bin/magento setup:static-content:deploy -f
 
-## Support
+# Switch to production mode
+php bin/magento deploy:mode:set production
+php bin/magento setup:di:compile
+php bin/magento setup:static-content:deploy -f
+```
 
-For issues and questions:
-- Magento 2: https://devdocs.magento.com/
-- Easypanel: https://easypanel.io/docs
+See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for more commands.
 
-## License
+## 📚 Documentation
+
+- **[EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md)** - Complete Easypanel deployment guide
+- **[CLAUDE.md](CLAUDE.md)** - Development guidelines and architecture overview
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Handy command reference
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+
+## 🔧 Project Structure
+
+```
+.
+├── docker-compose.yml          # Docker services configuration
+├── Dockerfile.php              # PHP-FPM image with Magento extensions
+├── Dockerfile.cli              # PHP CLI image for commands
+├── nginx.conf                  # Nginx configuration for Magento
+├── install-magento.sh          # Automated installation script
+├── .env.example                # Environment variables template
+├── EASYPANEL_INSTALLATION_GUIDE.md
+├── QUICK_REFERENCE.md
+└── CLAUDE.md
+```
+
+## 🚀 Key Features
+
+- **Custom PHP Images** - Built with all Magento required extensions
+- **Optimized Configuration** - Pre-configured for best performance
+- **OpenSearch Integration** - Modern search engine support
+- **Redis Caching** - Fast cache and session storage
+- **Automated Installation** - One-command setup script
+- **Production Ready** - Secure and scalable configuration
+- **Easypanel Optimized** - Designed specifically for Easypanel deployment
+- **No External Image Dependencies** - Builds from official PHP images
+
+## ⚠️ Important Notes
+
+1. **Composer Keys Required** - You MUST have Magento Marketplace authentication keys
+2. **First Build Takes Time** - Initial build (5-10 min) + Magento install (15-25 min)
+3. **Resource Requirements** - Ensure your server has at least 4GB RAM
+4. **Production Deployment** - Change all default passwords before going live
+
+## 🐛 Troubleshooting
+
+### Docker Build Fails
+- Ensure stable internet connection for downloading packages
+- Check Docker has sufficient disk space
+- Try: `docker compose build --no-cache`
+
+### Installation Script Fails
+1. Check Composer keys are correct
+2. Verify all containers are running: `docker compose ps`
+3. Check MariaDB is ready: `docker compose logs mariadb`
+4. Check OpenSearch is ready: `docker compose logs opensearch`
+
+### Cannot Access Website
+1. Check nginx logs: `docker compose logs nginx`
+2. Check PHP logs: `docker compose logs php`
+3. Verify installation completed: `docker compose exec cli ls -la /var/www/html/app/etc/env.php`
+
+For more solutions, see [EASYPANEL_INSTALLATION_GUIDE.md](EASYPANEL_INSTALLATION_GUIDE.md#troubleshooting)
+
+## 📦 System Requirements
+
+**Minimum:**
+- 4GB RAM
+- 2 CPU cores
+- 25GB disk space
+- Docker Engine 20.10+
+- Docker Compose v2+
+
+**Recommended:**
+- 8GB RAM
+- 4 CPU cores
+- 50GB SSD storage
+
+## 🔒 Security
+
+- Change all default passwords in `.env`
+- Enable HTTPS in production
+- Change admin URL from `/admin`
+- Enable 2FA for admin users
+- Keep all components updated
+- Regular backups
+
+## 📄 License
 
 This Docker configuration is provided as-is for deploying Magento 2. Magento 2 itself is licensed under OSL 3.0.
+
+## 🤝 Support
+
+- **Magento Issues:** https://experienceleague.adobe.com/docs/commerce.html
+- **Stack Exchange:** https://magento.stackexchange.com/
+- **Easypanel:** https://easypanel.io/docs
+
+---
+
+**Need help?** Check the [comprehensive installation guide](EASYPANEL_INSTALLATION_GUIDE.md) or [troubleshooting section](EASYPANEL_INSTALLATION_GUIDE.md#troubleshooting).
